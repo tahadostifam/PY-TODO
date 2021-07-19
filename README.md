@@ -1,4 +1,4 @@
-# todo-list-with-py-and-sqlite
+# Todo List With Python and Sqlite3
 <p>a Command-Line Based Todo List With Python and Sqlite3</p>
 
 ## Dependencies
