@@ -4,7 +4,7 @@ import sqlite3
 from tabulate import tabulate
 
 def clear_page():
-    os.system('cls')
+    os.system('clear')
 
 clear_page()
 
@@ -22,14 +22,17 @@ def welcome_page():
     text = """
 Welcome To tahadostifam Python Todo-App
 ---------------------------------------
-c -> clear screen
-n -> new todo
-d -> delete todo
-v -> view all todo's
-p -> view in-progress todo's
-s -> search in todo's
+c  -> clear screen
+n  -> new todo
+d  -> delete todo
+j  -> update todo state
+v  -> view all todo's
+p  -> view in-progress todo's
+\q -> to exit from current command
 ---------------------------------------
-e - exit
+l  -> export all todo's
+---------------------------------------
+e  -> exit
     """.strip()
     print(text)
     get_input()
@@ -69,10 +72,20 @@ def exec_user_commands(command):
         create_new_todo()
     elif command == 'd':
         delete_todo()
+    elif command == 'j':
+        update_todo_state()
+    elif command == 'l':
+        export_all_todos()
 
 def create_new_todo():
     header = input("Enter Todo Header -> ")
+    if header == '\q':
+        return 
+
     detail = input("Enter Todo Detail -> ")
+    if detail == '\q':
+      return
+
     if len(header) > 0:
         exec_query(f"insert into tbl_todos (header, detail, state) VALUES('{header}', '{detail}', 'in-progress')")
         connection.commit()
@@ -83,6 +96,10 @@ def create_new_todo():
     
 def delete_todo():
     id = input("Enter Todo id -> ")
+
+    if id == '\q':
+      return
+
     if len(id) > 0:
         todo_search_result = exec_query(f"SELECT * from tbl_todos where id={id}")
         if len(todo_search_result) > 0:    
@@ -95,6 +112,60 @@ def delete_todo():
     else:
         print("id cannot be empty...!")
         delete_todo()
+
+def update_todo_state():
+    id = input("Enter Todo id -> ")
+    if id == '\q':
+      return
+      
+    state_id = input("Select State (1=in-progress, 2=done) -> ")
+    if state_id == '\q':
+      return
+
+    if len(id) > 0 and len(state_id) > 0:
+        todo_search_result = exec_query(f"SELECT * from tbl_todos where id={id}")
+        if len(todo_search_result) > 0:
+            states = ['in-progress', 'done']
+            set_todo_state_value = None
+            if state_id == '1':
+              set_todo_state_value = states[0]
+            elif state_id == '2':
+                set_todo_state_value = states[1]
+            else:
+                print("Selected State Not Valid!!!")
+                update_todo_state()
+                return 
+            exec_query(f"update tbl_todos set state='{set_todo_state_value}' where id={id}")
+            connection.commit()
+            print("Todo State Changed! :)))")
+        else:
+            print("todo not exist...!")
+            update_todo_state()        
+    else:
+        print("id and state_id cannot be empty...!")
+        update_todo_state()
+
+def export_all_todos():
+    table_result = exec_query(f"SELECT * from tbl_todos")
+    filename = input("Enter File Name (without format) ->")
+    if filename == '\q':
+        return 
+
+    if len(filename) > 0:
+        table_rows = []
+        for row in table_result:
+            table_rows.append([row[0], row[1], row[2], row[3]])
+        table = tabulate(table_rows, headers=['id', 'header', 'detail', 'state'])
+        try:
+            f = open(filename, 'w')
+            f.write(table)
+            f.close()
+            print("Data Exported Successfully :)))")
+        except:
+            print("Error in Write File :(((")
+    else:
+        print("file name cannot be empty")
+        export_all_todos()
 
 def exec_query(query):
     cursor.execute(query)
